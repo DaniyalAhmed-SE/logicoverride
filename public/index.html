@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogicOverride</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #E8DDB5;
+  --bg2:        #D8C99B;
+  --surface:    #EDE3C0;
+  --surface2:   #F2EAD0;
+  --border:     #3d5a66;
+  --border-soft:#4a6875;
+  --accent:     #D8973C;
+  --accent-dim: #a06828;
+  --accent-soft:rgba(216,151,60,0.12);
+  --text:       #273E47;
+  --text-muted: #5a7a87;
+  --text-sub:   #3a5a68;
+  --green:      #1e6b1e;
+  --red:        #b01030;
+  --amber:      #a05500;
+  --radius:     12px;
+  --radius-sm:  7px;
+}
+
+/* ── HACKER THEME ── */
+body.hacker {
+  --bg:#000800; --bg2:#000500; --surface:#020f02; --surface2:#041004;
+  --border:#0c380c; --border-soft:#091f09;
+  --accent:#39ff14; --accent-dim:#1a6b08; --accent-soft:rgba(57,255,20,0.07);
+  --text:#b0e8b0; --text-muted:#3a6b3a; --text-sub:#70b870;
+  --green:#39ff14; --red:#ff3333; --amber:#ffaa00;
+  font-family:'Share Tech Mono',monospace !important;
+}
+body.hacker::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.2) 3px,rgba(0,0,0,0.2) 4px); }
+body.hacker::after  { content:''; position:fixed; inset:0; pointer-events:none; z-index:9998; background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.8) 100%); }
+body.hacker .workspace { position:relative; z-index:10; }
+body.hacker .app-name { color:var(--accent); text-shadow:0 0 12px rgba(57,255,20,0.6); animation:hflicker 8s infinite; }
+@keyframes hflicker { 0%,94%,100%{opacity:1} 95%{opacity:0.7} 97%{opacity:1} 99%{opacity:0.8} }
+body.hacker .titlebar { background:#000500; border-bottom-color:#0c380c; }
+body.hacker .mode-btn.active { background:var(--accent); color:#000800; box-shadow:0 0 10px rgba(57,255,20,0.4); }
+body.hacker .timer-display { color:var(--accent); text-shadow:0 0 16px rgba(57,255,20,0.5); }
+body.hacker .timer-display.warn { color:var(--amber); text-shadow:0 0 16px rgba(255,170,0,0.5); }
+body.hacker .card,.timer-card,.filter-card,.result-card { border-radius:3px; }
+body.hacker .card-header,.editor-footer,.result-header { background:rgba(0,15,0,0.9); }
+body.hacker .card-title { color:var(--accent); letter-spacing:0.12em; text-shadow:0 0 6px rgba(57,255,20,0.3); }
+body.hacker .problem-name { color:var(--accent); text-shadow:0 0 8px rgba(57,255,20,0.25); }
+body.hacker #code-editor { color:var(--accent); caret-color:var(--accent); }
+body.hacker .line-nums,.retype-line-nums { background:#000500; color:var(--accent-dim); border-color:var(--border); }
+body.hacker .ch-correct { color:var(--accent); text-shadow:0 0 4px rgba(57,255,20,0.4); }
+body.hacker .ch-error { color:var(--red); background:rgba(255,51,51,0.1); }
+body.hacker .ch-cursor { border-left-color:var(--accent); }
+body.hacker .retype-progress-fill { background:var(--accent); box-shadow:0 0 6px rgba(57,255,20,0.5); }
+body.hacker .btn-submit { background:transparent; color:var(--accent); border:1px solid var(--accent-dim); font-family:'Share Tech Mono',monospace; letter-spacing:0.1em; }
+body.hacker .btn-submit:hover { background:rgba(57,255,20,0.07); border-color:var(--accent); }
+body.hacker .result-card.pass { border-color:rgba(57,255,20,0.35); }
+body.hacker .result-card.pass .verdict-text { color:var(--accent); text-shadow:0 0 10px rgba(57,255,20,0.4); }
+body.hacker .stat-value.good { color:var(--accent); text-shadow:0 0 8px rgba(57,255,20,0.4); }
+body.hacker .feedback-text::before { content:'> '; color:var(--accent-dim); font-family:'Share Tech Mono',monospace; }
+body.hacker .btn-secondary:hover { color:var(--accent); border-color:var(--accent-dim); }
+
+/* Custom Form Elements */
+.topic-dropdown {
+  background: var(--surface);
+  color: var(--text-sub);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  max-width: 350px;
+  transition: all 0.2s;
+  appearance: auto;
+}
+.topic-dropdown:hover, .topic-dropdown:focus { border-color: var(--accent); color: var(--accent); }
+body.hacker .topic-dropdown { background: #000500; color: var(--accent); border-color: var(--border); font-family: 'Share Tech Mono', monospace; }
+body.hacker .topic-dropdown:focus { border-color: var(--accent); box-shadow: 0 0 8px rgba(57,255,20,0.2); }
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg2); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
+
+/* TITLEBAR */
+.titlebar { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; height:44px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:200; }
+.titlebar-left  { display:flex; align-items:center; gap:0.75rem; }
+.titlebar-right { display:flex; align-items:center; gap:0.5rem; }
+.app-name { font-weight:800; font-size:15px; color:var(--accent); letter-spacing:0.02em; cursor:pointer; transition:opacity 0.15s; }
+.app-name:hover { opacity:0.8; }
+.titlebar-sep { width:1px; height:16px; background:var(--border); }
+.crumb { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; }
+.crumb span { color:var(--text-sub); }
+.mode-toggle { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:3px; gap:2px; }
+.mode-btn { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; padding:3px 12px; border-radius:16px; border:none; cursor:pointer; transition:all 0.2s; color:var(--text-muted); background:transparent; }
+.mode-btn.active { background:var(--accent); color:#F2EAD0; box-shadow:0 1px 6px rgba(216,151,60,0.35); }
+.mode-btn:not(.active):hover { color:var(--text-sub); }
+.pill { font-size:11px; font-weight:500; padding:3px 10px; border-radius:20px; border:1px solid var(--border); color:var(--text-muted); background:var(--surface); }
+.pill.accent { color:var(--accent); border-color:var(--accent-dim); background:var(--accent-soft); }
+
+/* WORKSPACE */
+.workspace { max-width:900px; margin:0 auto; padding:1.5rem 1.25rem 3rem; display:flex; flex-direction:column; gap:1rem; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* LANDING */
+#screen-landing { min-height:calc(100vh - 44px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem 1.5rem 3rem; position:relative; overflow:hidden; }
+#screen-landing::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(39,62,71,0.1) 1px,transparent 1px),linear-gradient(90deg,rgba(39,62,71,0.1) 1px,transparent 1px); background-size:40px 40px; opacity:0.6; animation:grid-drift 20s linear infinite; }
+#screen-landing::after { content:''; position:absolute; top:20%; left:50%; transform:translateX(-50%); width:600px; height:300px; background:radial-gradient(ellipse,rgba(216,151,60,0.15) 0%,transparent 70%); pointer-events:none; animation:orb-pulse 4s ease-in-out infinite; }
+@keyframes grid-drift { from{background-position:0 0} to{background-position:40px 40px} }
+@keyframes orb-pulse  { 0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)} 50%{opacity:1;transform:translateX(-50%) scale(1.1)} }
+.landing-inner { position:relative; z-index:1; max-width:720px; width:100%; text-align:center; }
+
+.hero-name { font-family:Impact,'Arial Narrow',sans-serif; font-size:clamp(48px,9vw,82px); color:var(--accent); letter-spacing:0.04em; line-height:1; margin-bottom:0.5rem; text-shadow:0 0 60px rgba(216,151,60,0.3); animation:hero-in 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes hero-in { from{opacity:0;transform:translateY(-20px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+.hero-tag { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:3px 12px; margin-bottom:0.85rem; letter-spacing:0.06em; animation:hero-in 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both; }
+.hero-tagline { font-size:clamp(14px,2.5vw,17px); color:var(--text-sub); font-weight:500; margin-bottom:2rem; line-height:1.5; animation:hero-in 0.7s 0.15s cubic-bezier(0.16,1,0.3,1) both; }
+.hero-tagline strong { color:var(--text); }
+
+/* Mode cards */
+.mode-cards { display:grid; grid-template-columns:1fr 1fr; gap:0.85rem; margin-bottom:1.25rem; animation:hero-in 0.7s 0.2s cubic-bezier(0.16,1,0.3,1) both; }
+.mode-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem; cursor:pointer; text-align:left; transition:all 0.15s; position:relative; overflow:hidden; }
+.mode-card:hover { border-color:var(--accent-dim); transform:translateY(-2px); box-shadow:0 6px 20px rgba(39,62,71,0.15); }
+.mode-card.selected { border-color:var(--accent); background:rgba(216,151,60,0.07); box-shadow:0 0 0 1px var(--accent-dim), 0 6px 20px rgba(216,151,60,0.15); }
+.mode-card-badge { position:absolute; top:0.65rem; right:0.65rem; font-size:9px; font-weight:700; letter-spacing:0.08em; padding:2px 7px; border-radius:10px; background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-dim); }
+.mode-card-icon  { font-size:22px; margin-bottom:0.5rem; display:block; }
+.mode-card-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:0.25rem; }
+.mode-card-desc  { font-size:11.5px; color:var(--text-muted); line-height:1.5; }
+
+/* Level cards */
+.level-section { margin-bottom:1.25rem; animation:hero-in 0.7s 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+.level-section-label { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem; }
+.level-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:0.6rem; }
+.level-card { background:#C8B882; border:1px solid #3d5a66; border-radius:var(--radius-sm); padding:0.75rem 0.5rem; cursor:pointer; text-align:center; transition:all 0.15s; position:relative; overflow:hidden; }
+.level-card:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(39,62,71,0.15); }
+.level-card-name { font-size:12px; font-weight:700; margin-bottom:0.2rem; color:var(--text); transition:color 0.15s; }
+.level-card-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-muted); }
+.level-card-bar  { position:absolute; bottom:0; left:0; height:3px; border-radius:2px; transition:width 0.3s; width:0%; }
+.level-card[data-level="Beginner"].selected     { border-color:#1e6b1e; background:rgba(30,107,30,0.1); }
+.level-card[data-level="Beginner"].selected .level-card-name { color:#1e6b1e; }
+.level-card[data-level="Beginner"].selected .level-card-bar  { width:100%; background:#1e6b1e; }
+.level-card[data-level="Intermediate"].selected { border-color:#a05500; background:rgba(160,85,0,0.1); }
+.level-card[data-level="Intermediate"].selected .level-card-name { color:#a05500; }
+.level-card[data-level="Intermediate"].selected .level-card-bar  { width:100%; background:#a05500; }
+.level-card[data-level="Pro"].selected          { border-color:#b01030; background:rgba(176,16,48,0.08); }
+.level-card[data-level="Pro"].selected .level-card-name { color:#b01030; }
+.level-card[data-level="Pro"].selected .level-card-bar  { width:100%; background:#b01030; }
+.level-card[data-level="Hacker"].selected       { border-color:#39ff14; background:rgba(57,255,20,0.07); box-shadow:0 0 14px rgba(57,255,20,0.1); }
+.level-card[data-level="Hacker"].selected .level-card-name { color:#39ff14; text-shadow:0 0 8px rgba(57,255,20,0.5); font-family:'JetBrains Mono',monospace; }
+.level-card[data-level="Hacker"].selected .level-card-bar  { width:100%; background:#39ff14; }
+
+/* Topic section */
+.topic-section { margin-bottom:1.5rem; animation:hero-in 0.7s 0.28s cubic-bezier(0.16,1,0.3,1) both; }
+.topic-section-label { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.6rem; }
+
+/* Start button */
+.btn-start { font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; color:#F2EAD0; background:var(--accent); border:none; border-radius:var(--radius-sm); padding:0.8rem 3rem; cursor:pointer; transition:all 0.15s; box-shadow:0 4px 20px rgba(216,151,60,0.35); animation:hero-in 0.7s 0.32s cubic-bezier(0.16,1,0.3,1) both; position:relative; overflow:hidden; }
+.btn-start::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); transition:transform 0.4s; }
+.btn-start:hover { background:#c4832a; box-shadow:0 6px 28px rgba(216,151,60,0.45); transform:translateY(-2px); }
+.btn-start:active { transform:translateY(0); }
+
+/* APP SCREEN */
+#screen-app { display:none; }
+#screen-app.visible { display:block; }
+
+/* Timer */
+.timer-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; animation:fadeUp 0.3s ease both; }
+.timer-left  { display:flex; align-items:center; gap:1rem; }
+.timer-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.timer-display { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:600; color:var(--accent); letter-spacing:0.05em; line-height:1; transition:color 0.3s; min-width:110px; }
+.timer-display.warn { color:#a05500; animation:soft-pulse 1s ease-in-out infinite; }
+@keyframes soft-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+.timer-meta { display:flex; flex-direction:column; gap:3px; }
+.timer-label { font-size:11px; font-weight:600; color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase; }
+.timer-hint  { font-size:11px; color:var(--text-muted); }
+.time-limit-label { font-size:10px; color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase; }
+.time-limit-val   { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--text-sub); }
+.status-indicator { display:flex; align-items:center; gap:0.5rem; font-size:12px; color:var(--text-muted); font-weight:500; margin-left:1.5rem; }
+.status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; transition:all 0.3s; background:var(--text-muted); }
+.status-dot.running { background:var(--accent); box-shadow:0 0 8px rgba(216,151,60,0.5); animation:dot-pulse 1.5s ease-in-out infinite; }
+.status-dot.done    { background:#1e6b1e; box-shadow:0 0 8px rgba(30,107,30,0.4); }
+.status-dot.expired { background:#b01030; box-shadow:0 0 8px rgba(176,16,48,0.4); }
+@keyframes dot-pulse { 0%,100%{box-shadow:0 0 6px rgba(216,151,60,0.5)} 50%{box-shadow:0 0 14px rgba(216,151,60,0.8)} }
+
+/* Filter bar */
+.filter-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:0.75rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; animation:fadeUp 0.3s ease 0.04s both; }
+.filter-left { display:flex; align-items:center; gap:0.75rem; flex:1; }
+.filter-label { font-size:11px; font-weight:600; color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap; }
+.filter-topic-tag { font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-dim); }
+.btn-new-problem { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-muted); background:transparent; border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 14px; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.btn-new-problem:hover { border-color:var(--accent-dim); color:var(--accent); background:var(--accent-soft); }
+
+/* Cards */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; animation:fadeUp 0.3s ease both; }
+.card-header { display:flex; align-items:center; gap:0.6rem; padding:0.65rem 1.1rem; border-bottom:1px solid var(--border-soft); background:var(--surface2); flex-wrap:wrap; }
+.card-title  { font-size:12px; font-weight:600; color:var(--text-sub); letter-spacing:0.03em; text-transform:uppercase; flex:1; min-width:0; }
+.tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; letter-spacing:0.03em; white-space:nowrap; }
+.tag-accent { background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-dim); }
+.tag-green  { background:rgba(30,107,30,0.1);  color:#1e6b1e; border:1px solid rgba(30,107,30,0.35); }
+.tag-blue   { background:rgba(39,62,71,0.1);   color:#273E47; border:1px solid rgba(39,62,71,0.35); }
+.tag-amber  { background:rgba(160,85,0,0.1);   color:#a05500; border:1px solid rgba(160,85,0,0.35); }
+.tag-red    { background:rgba(176,16,48,0.09);  color:#b01030; border:1px solid rgba(176,16,48,0.35); }
+.card-body  { padding:1.1rem 1.25rem; }
+
+/* Problem spinner */
+.problem-spinner { display:flex; align-items:center; gap:0.75rem; padding:1.5rem 0; color:var(--text-muted); font-size:13px; }
+.spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.problem-name { font-size:18px; font-weight:700; color:var(--text); margin-bottom:0.5rem; }
+.problem-desc { font-size:13.5px; line-height:1.75; color:var(--text-sub); margin-bottom:1rem; }
+.problem-desc code { font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--bg2); color:var(--accent); padding:1px 5px; border-radius:4px; border:1px solid var(--border); }
+.examples-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+.example { background:var(--bg2); border:1px solid var(--border-soft); border-radius:var(--radius-sm); padding:0.65rem 0.9rem; }
+.example-label { font-size:10px; font-weight:600; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.3rem; }
+.example-val   { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-sub); line-height:1.5; white-space:pre-wrap; }
+
+/* Editor */
+.editor-container { display:flex; background:var(--bg); min-height:260px; }
+.line-nums { padding:1rem 0.75rem; background:var(--surface2); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; text-align:right; user-select:none; min-width:50px; border-right:1px solid var(--border-soft); flex-shrink:0; white-space:pre; overflow:hidden; }
+#code-editor { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; padding:1rem 1rem 1rem 0.9rem; resize:none; min-height:260px; caret-color:var(--accent); tab-size:4; white-space:pre; overflow-wrap:normal; overflow-x:auto; }
+#code-editor::selection { background:rgba(216,151,60,0.2); }
+#code-editor::placeholder { color:var(--text-muted); opacity:0.5; }
+.editor-footer { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 1.1rem; border-top:1px solid var(--border-soft); background:var(--surface2); }
+.editor-meta { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); display:flex; gap:1.25rem; }
+.editor-meta span { color:var(--text-sub); }
+.btn-submit { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:#F2EAD0; background:var(--accent); border:none; border-radius:var(--radius-sm); padding:0.5rem 1.4rem; cursor:pointer; transition:all 0.15s; box-shadow:0 2px 12px rgba(216,151,60,0.3); }
+.btn-submit:hover { background:#c4832a; box-shadow:0 2px 20px rgba(216,151,60,0.45); transform:translateY(-1px); }
+.btn-submit:active  { transform:translateY(0); }
+.btn-submit:disabled { background:var(--accent-dim); color:rgba(242,234,208,0.5); cursor:not-allowed; box-shadow:none; transform:none; }
+.loading-bar { display:none; height:2px; background:var(--border); overflow:hidden; position:relative; }
+.loading-bar::after { content:''; position:absolute; top:0; left:-45%; width:45%; height:100%; background:linear-gradient(90deg,transparent,var(--accent),transparent); animation:sweep 1s linear infinite; }
+@keyframes sweep { to{left:145%} }
+
+/* Retype */
+.retype-meta-row { display:flex; gap:1.25rem; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); }
+.retype-meta-row span { color:var(--accent); }
+.retype-meta-row .err { color:#b01030; }
+.retype-progress-bar  { height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin:0.6rem 0 0; }
+.retype-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.1s; width:0%; }
+.retype-outer { display:flex; background:var(--bg); }
+.retype-line-nums { padding:1rem 0.75rem; background:var(--surface2); color:var(--text-muted); font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; text-align:right; user-select:none; min-width:50px; border-right:1px solid var(--border-soft); flex-shrink:0; white-space:pre; overflow:hidden; }
+.retype-scroll-zone { flex:1; position:relative; overflow-x:auto; cursor:text; }
+#retype-display { font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; padding:1rem 1rem 1rem 0.9rem; white-space:pre; pointer-events:none; user-select:none; position:relative; min-height:200px; }
+.ch-pending { color:var(--text-muted); }
+.ch-correct { color:var(--accent); }
+.ch-error   { color:#b01030; background:rgba(176,16,48,0.1); border-radius:2px; }
+.ch-cursor  { border-left:2px solid var(--accent); margin-left:-2px; animation:cblink 1s step-end infinite; }
+@keyframes cblink { 0%,100%{border-color:var(--accent)} 50%{border-color:transparent} }
+#retype-input { position:absolute; top:0; left:0; width:100%; background:transparent; border:none; outline:none; color:transparent; caret-color:transparent; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; padding:1rem 1rem 1rem 0.9rem; resize:none; white-space:pre; overflow:hidden; tab-size:4; z-index:2; cursor:text; }
+
+/* Result card */
+.result-card { display:none; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; animation:fadeUp 0.3s ease both; }
+.result-card.pass { border-color:rgba(30,107,30,0.5); }
+.result-card.fail { border-color:rgba(176,16,48,0.4); }
+.result-header { padding:0.9rem 1.25rem; display:flex; align-items:center; gap:0.75rem; border-bottom:1px solid var(--border-soft); background:var(--surface2); }
+.verdict-icon { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.result-card.pass .verdict-icon { background:rgba(30,107,30,0.12); }
+.result-card.fail .verdict-icon { background:rgba(176,16,48,0.1); }
+.verdict-text { font-size:15px; font-weight:700; }
+.result-card.pass .verdict-text { color:#1e6b1e; }
+.result-card.fail .verdict-text { color:#b01030; }
+.verdict-sub  { font-size:11px; color:var(--text-muted); margin-left:auto; font-family:'JetBrains Mono',monospace; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--border-soft); }
+.stat { padding:1rem 1.25rem; border-right:1px solid var(--border-soft); text-align:center; }
+.stat:last-child { border-right:none; }
+.stat-label { font-size:10px; font-weight:600; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.35rem; }
+.stat-value { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:600; color:var(--text); line-height:1; }
+.stat-value.good { color:#1e6b1e; }
+.stat-value.okay { color:#a05500; }
+.stat-value.poor { color:#b01030; }
+
+/* Rich feedback */
+.feedback-section { padding:0.85rem 1.25rem; border-bottom:1px solid var(--border-soft); }
+.feedback-section:last-of-type { border-bottom:none; }
+.feedback-section-title { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.4rem; }
+.feedback-section-title span { font-size:13px; }
+.feedback-text { font-size:13px; color:var(--text-sub); line-height:1.7; }
+.feedback-text code { font-family:'JetBrains Mono',monospace; font-size:11.5px; background:var(--bg2); color:var(--accent); padding:1px 5px; border-radius:4px; border:1px solid var(--border); }
+.error-lines { display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.4rem; }
+.error-line-badge { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px; background:rgba(176,16,48,0.09); color:#b01030; border:1px solid rgba(176,16,48,0.3); }
+
+.result-actions { padding:0.75rem 1.25rem; display:flex; justify-content:flex-end; gap:0.6rem; border-top:1px solid var(--border-soft); }
+.btn-secondary { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-sub); background:transparent; border:1px solid var(--border); border-radius:var(--radius-sm); padding:0.45rem 1.1rem; cursor:pointer; transition:all 0.15s; }
+.btn-secondary:hover { background:var(--surface2); border-color:var(--accent-dim); color:var(--accent); }
+
+.error-banner { display:none; background:rgba(176,16,48,0.08); border:1px solid rgba(176,16,48,0.35); border-radius:var(--radius-sm); padding:0.6rem 1rem; font-size:12px; color:#b01030; line-height:1.5; margin-bottom:1rem; }
+
+.mode-section { display:none; }
+.mode-section.active { display:contents; }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="titlebar-left">
+    <div class="app-name" onclick="goHome()">LogicOverride</div>
+    <div class="titlebar-sep"></div>
+    <div class="crumb" id="titlebar-crumb">Select Mode</div>
+  </div>
+  <div class="titlebar-right" id="titlebar-right" style="display:none;">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-logic"  onclick="switchMode('logic')">Logic</button>
+      <button class="mode-btn"        id="btn-retype" onclick="switchMode('retype')">Retype</button>
+    </div>
+    <span class="pill accent" id="pill-mode">Logic Mode</span>
+    <span class="pill"        id="pill-level">Beginner</span>
+  </div>
+</div>
+
+<!-- LANDING -->
+<div id="screen-landing">
+  <div class="landing-inner">
+    <div class="hero-name">LogicOverride</div>
+    <div class="hero-tag">C / C++ · AI Generated Problems</div>
+    <div class="hero-tagline">
+      Every problem is <strong>generated fresh</strong> based on your topic and level.<br>
+      Solve it. Get real feedback. Improve.
+    </div>
+
+    <div class="mode-cards">
+      <div class="mode-card selected" id="card-logic" onclick="selectMode('logic')">
+        <span class="mode-card-badge">AI Generated</span>
+        <span class="mode-card-icon">🧠</span>
+        <div class="mode-card-title">Logic Mode</div>
+        <div class="mode-card-desc">AI generates a fresh C++ problem for your topic and level. Write your solution, get detailed feedback.</div>
+      </div>
+      <div class="mode-card" id="card-retype" onclick="selectMode('retype')">
+        <span class="mode-card-badge">Local</span>
+        <span class="mode-card-icon">⌨️</span>
+        <div class="mode-card-title">Retype Mode</div>
+        <div class="mode-card-desc">Copy a C++ snippet exactly. Builds muscle memory, syntax intuition, and raw typing speed.</div>
+      </div>
+    </div>
+
+    <div class="level-section">
+      <div class="level-section-label">Difficulty</div>
+      <div class="level-grid">
+        <div class="level-card selected" data-level="Beginner"     onclick="selectLevel('Beginner')"><div class="level-card-name">Beginner</div><div class="level-card-time">5:00 limit</div><div class="level-card-bar"></div></div>
+        <div class="level-card"          data-level="Intermediate" onclick="selectLevel('Intermediate')"><div class="level-card-name">Intermediate</div><div class="level-card-time">3:00 limit</div><div class="level-card-bar"></div></div>
+        <div class="level-card"          data-level="Pro"          onclick="selectLevel('Pro')"><div class="level-card-name">Pro</div><div class="level-card-time">2:00 limit</div><div class="level-card-bar"></div></div>
+        <div class="level-card"          data-level="Hacker"       onclick="selectLevel('Hacker')"><div class="level-card-name">⚡ Hacker</div><div class="level-card-time">1:30 limit</div><div class="level-card-bar"></div></div>
+      </div>
+    </div>
+
+    <div class="topic-section" id="topic-section-wrap">
+      <div class="topic-section-label">Select Topic</div>
+      <select class="topic-dropdown" id="landing-topic-select" onchange="changeTopic(this.value)">
+      </select>
+    </div>
+
+    <button class="btn-start" onclick="startSession()">Start Session →</button>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="screen-app">
+<div class="workspace">
+
+  <div class="timer-card">
+    <div class="timer-left">
+      <div class="timer-display" id="timer">00:00</div>
+      <div class="timer-meta">
+        <div class="timer-label">Elapsed Time</div>
+        <div class="timer-hint">Starts on first keypress</div>
+      </div>
+    </div>
+    <div class="timer-right">
+      <div class="time-limit-label">Time Limit</div>
+      <div class="time-limit-val" id="time-limit-val">—</div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Waiting for input</span>
+    </div>
+  </div>
+
+  <div class="filter-card" id="app-filter-card">
+    <div class="filter-left">
+      <span class="filter-label">Session</span>
+      <span class="filter-topic-tag" id="session-level-tag">Beginner</span>
+      <select class="topic-dropdown" id="session-topic-select" style="width:auto;padding:4px 10px;font-size:11px;max-width:200px;" onchange="changeTopic(this.value)">
+      </select>
+    </div>
+    <button class="btn-new-problem" id="btn-new-problem">Generate Problem ↺</button>
+  </div>
+
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- LOGIC MODE -->
+  <div class="mode-section active" id="section-logic">
+
+    <div class="card" id="problem-card">
+      <div class="card-header">
+        <div class="card-title">Problem</div>
+        <span class="tag tag-blue" id="l-prob-level">—</span>
+        <span class="tag tag-accent" id="l-prob-topic">—</span>
+      </div>
+      <div class="card-body" id="problem-body">
+        <div class="problem-spinner" id="problem-spinner">
+          <div class="spinner"></div>
+          Generating your problem…
+        </div>
+        <div id="problem-content" style="display:none;">
+          <div class="problem-name" id="l-prob-name"></div>
+          <div class="problem-desc" id="l-prob-desc"></div>
+          <div class="examples-grid" id="l-examples"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="editor-card" style="display:none;margin-top:1rem;">
+      <div class="card-header">
+        <div class="card-title">solution.cpp</div>
+        <span class="tag tag-accent">C++</span>
+      </div>
+      <div class="editor-container">
+        <div class="line-nums" id="line-nums">1</div>
+        <textarea id="code-editor" spellcheck="false" autocorrect="off" autocapitalize="off"
+          placeholder="// Start typing to begin the timer..."></textarea>
+      </div>
+      <div class="loading-bar" id="loading-bar"></div>
+      <div class="editor-footer">
+        <div class="editor-meta">Ln <span id="line-count">1</span> &nbsp;|&nbsp; Chars <span id="char-count">0</span></div>
+        <button class="btn-submit" id="submit-btn">Submit ↗</button>
+      </div>
+    </div>
+
+    <div class="result-card" id="logic-result" style="margin-top:1rem;">
+      <div class="result-header">
+        <div class="verdict-icon" id="l-verdict-icon"></div>
+        <div class="verdict-text" id="l-verdict-text"></div>
+        <div class="verdict-sub"  id="l-verdict-sub"></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">Time Taken</div><div class="stat-value" id="l-res-time">—</div></div>
+        <div class="stat"><div class="stat-label">Logic Score</div><div class="stat-value" id="l-res-logic">—</div></div>
+        <div class="stat"><div class="stat-label">LO Score</div><div class="stat-value" id="l-res-final">—</div></div>
+      </div>
+      <div class="feedback-section" id="section-errors" style="display:none;">
+        <div class="feedback-section-title"><span>⚠️</span> Error Lines</div>
+        <div class="error-lines" id="l-error-lines"></div>
+      </div>
+      <div class="feedback-section" id="section-suggestions" style="display:none;">
+        <div class="feedback-section-title"><span>💡</span> Suggestions</div>
+        <div class="feedback-text" id="l-suggestions"></div>
+      </div>
+      <div class="feedback-section" id="section-approach" style="display:none;">
+        <div class="feedback-section-title"><span>🔀</span> Alternative Approach</div>
+        <div class="feedback-text" id="l-approach"></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-secondary" id="logic-try-again">Try Again</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RETYPE MODE -->
+  <div class="mode-section" id="section-retype">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-header">
+        <div class="card-title">Snippet</div>
+        <span class="tag tag-blue" id="r-snip-id">—</span>
+        <span class="tag" id="r-snip-level">—</span>
+        <div id="r-snip-topics" style="display:flex;gap:0.35rem;flex-wrap:wrap;"></div>
+      </div>
+      <div class="card-body" style="padding-bottom:0.5rem;">
+        <div class="problem-name" id="r-snip-name">—</div>
+        <div class="problem-desc" style="margin-bottom:0;">Retype the snippet exactly — character by character. Paste disabled.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" id="r-snip-file">snippet.cpp</div>
+        <span class="tag tag-accent">C++</span>
+        <div class="retype-meta-row">WPM&nbsp;<span id="live-wpm">—</span>&nbsp;&nbsp;Acc&nbsp;<span id="live-acc">—</span>&nbsp;&nbsp;Errors&nbsp;<span class="err" id="live-errors">0</span></div>
+      </div>
+      <div class="card-body" style="padding:0.6rem 1.1rem 0;">
+        <div class="retype-progress-bar"><div class="retype-progress-fill" id="retype-progress-fill"></div></div>
+      </div>
+      <div class="retype-outer">
+        <div class="retype-line-nums" id="retype-line-nums">1</div>
+        <div class="retype-scroll-zone" id="retype-scroll-zone" onclick="document.getElementById('retype-input').focus()">
+          <div id="retype-display"></div>
+          <textarea id="retype-input" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" onpaste="return false;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="result-card" id="retype-result" style="margin-top:1rem;">
+      <div class="result-header">
+        <div class="verdict-icon" id="r-verdict-icon"></div>
+        <div class="verdict-text" id="r-verdict-text"></div>
+        <div class="verdict-sub"  id="r-verdict-sub"></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">WPM</div><div class="stat-value" id="r-wpm">—</div></div>
+        <div class="stat"><div class="stat-label">Accuracy</div><div class="stat-value" id="r-acc">—</div></div>
+        <div class="stat"><div class="stat-label">Errors</div><div class="stat-value" id="r-errors">—</div></div>
+      </div>
+      <div class="feedback-section">
+        <div class="feedback-text" id="r-feedback"></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-secondary" id="retype-try-again">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// API CONFIGURATION
+// When running locally: paste your Gemini key below.
+// When deployed to Vercel: leave blank — calls go to /api/evaluate proxy.
+// NEVER commit a real key to GitHub.
+// ═══════════════════════════════════════
+const GEMINI_API_KEY = '';
+
+// Routes all AI calls — uses proxy on Vercel, direct Gemini locally if key set
+async function callAI(payload) {
+  // If deployed (no key in file), use the Vercel proxy
+  if (!GEMINI_API_KEY) {
+    const resp = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      throw new Error(e?.error || `HTTP ${resp.status}`);
+    }
+    return await resp.json();
+  }
+
+  // If key is set locally, call Gemini directly
+  const { systemMsg, prompt } = payload;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: systemMsg }] },
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+  });
+  if (!resp.ok) {
+    if (resp.status === 429) throw new Error('429 Rate Limit');
+    const e = await resp.json().catch(() => ({}));
+    throw new Error(e?.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  const raw  = data.candidates[0].content.parts[0].text || '';
+  return JSON.parse(raw.replace(/```json/gi, '').replace(/```/g, '').trim());
+}
+
+// ═══════════════════════════════════════
+// TOPICS
+// ═══════════════════════════════════════
+const TOPICS_BY_LEVEL = {
+  Beginner:     ['Basic Syntax & Variables','If/Else & Switch','Loops (For/While)','Functions','1D Arrays','Strings & Chars','Basic Math Operations','Pattern Printing'],
+  Intermediate: ['Hash Maps / Frequency Arrays','Linked Lists','Binary Search','Sorting Algorithms','Basic Recursion','Two Pointers','Sliding Window','Stacks','Queues','Prefix Sum','2D Arrays / Matrices'],
+  Pro:          ['Dynamic Programming (1D & 2D)','Trees & BSTs','Graph Traversal (BFS/DFS)','Greedy Algorithms','Backtracking','Priority Queue / Heaps','Bit Manipulation','Disjoint Set (Union Find)'],
+  Hacker:       ['Advanced Dynamic Programming','Segment Trees','Fenwick Trees (BIT)','Trie','Network Flow','Graph Coloring / Bipartite','Heavy-Light Decomposition','Concurrency / Multi-threading']
+};
+
+// ═══════════════════════════════════════
+// SNIPPETS (retype — static)
+// ═══════════════════════════════════════
+const SNIPPETS = [
+  { id:'snip-001', level:'Beginner',     topics:['Arrays','Loops'],     name:'Bubble Sort',              file:'bubble_sort.cpp',
+    code:`void bubbleSort(int arr[], int n) {\n    for (int i = 0; i < n - 1; i++) {\n        for (int j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                int temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n}` },
+  { id:'snip-002', level:'Beginner',     topics:['Strings','Loops'],    name:'String Length',            file:'str_length.cpp',
+    code:`int strLength(const char* s) {\n    int len = 0;\n    while (s[len] != '\\0') {\n        len++;\n    }\n    return len;\n}` },
+  { id:'snip-003', level:'Intermediate', topics:['Recursion'],          name:'Recursive Factorial',      file:'factorial.cpp',
+    code:`long long factorial(int n) {\n    if (n < 0) return -1;\n    if (n == 0 || n == 1) return 1;\n    return n * factorial(n - 1);\n}` },
+  { id:'snip-004', level:'Intermediate', topics:['Linked List'],        name:'Linked List Insert',       file:'list_insert.cpp',
+    code:`struct Node {\n    int data;\n    Node* next;\n};\n\nvoid insertFront(Node*& head, int val) {\n    Node* node = new Node();\n    node->data = val;\n    node->next = head;\n    head = node;\n}` },
+  { id:'snip-005', level:'Pro',          topics:['Trees','Recursion'],  name:'BST Insert',               file:'bst_insert.cpp',
+    code:`struct TreeNode {\n    int val;\n    TreeNode* left;\n    TreeNode* right;\n};\n\nTreeNode* insert(TreeNode* root, int val) {\n    if (!root) return new TreeNode{val, nullptr, nullptr};\n    if (val < root->val)\n        root->left  = insert(root->left,  val);\n    else\n        root->right = insert(root->right, val);\n    return root;\n}` },
+  { id:'snip-006', level:'Hacker',       topics:['Bit Manipulation'],   name:'Fast Inverse Square Root', file:'fast_inv_sqrt.cpp',
+    code:`float fastInvSqrt(float number) {\n    long i;\n    float x2, y;\n    const float threehalfs = 1.5F;\n    x2 = number * 0.5F;\n    y  = number;\n    i  = *(long*)&y;\n    i  = 0x5f3759df - (i >> 1);\n    y  = *(float*)&i;\n    y  = y * (threehalfs - (x2 * y * y));\n    return y;\n}` },
+];
+
+const TIME_LIMITS = { Beginner:300, Intermediate:180, Pro:120, Hacker:90 };
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let selectedMode  = 'logic';
+let selectedLevel = 'Beginner';
+let selectedTopic = null;
+let currentMode   = 'logic';
+let currentProblem = null;
+let currentSnippet = null;
+let timeLimit     = 300;
+
+// ═══════════════════════════════════════
+// LANDING
+// ═══════════════════════════════════════
+function buildTopicDropdown() {
+  let html = '<option value="">✨ AI Chooses (Mixed Topics)</option>';
+  (TOPICS_BY_LEVEL[selectedLevel] || []).forEach(t => {
+    html += `<option value="${t}" ${selectedTopic===t?'selected':''}>${t}</option>`;
+  });
+  document.getElementById('landing-topic-select').innerHTML = html;
+  const ss = document.getElementById('session-topic-select');
+  if (ss) ss.innerHTML = html;
+}
+
+function changeTopic(val) {
+  selectedTopic = val === '' ? null : val;
+  buildTopicDropdown();
+}
+
+function selectMode(m) {
+  selectedMode = m;
+  document.getElementById('card-logic').classList.toggle('selected',  m==='logic');
+  document.getElementById('card-retype').classList.toggle('selected', m==='retype');
+  document.getElementById('topic-section-wrap').style.display = m==='logic' ? '' : 'none';
+  document.getElementById('app-filter-card').style.display    = m==='logic' ? 'flex' : 'none';
+}
+
+function selectLevel(l) {
+  selectedLevel = l;
+  selectedTopic = null;
+  document.querySelectorAll('.level-card').forEach(c => c.classList.toggle('selected', c.dataset.level===l));
+  document.body.classList.toggle('hacker', l==='Hacker');
+  buildTopicDropdown();
+}
+
+function startSession() {
+  document.getElementById('screen-landing').style.display = 'none';
+  document.getElementById('screen-app').classList.add('visible');
+  document.getElementById('titlebar-right').style.display = 'flex';
+
+  currentMode = selectedMode;
+  timeLimit   = TIME_LIMITS[selectedLevel];
+
+  document.getElementById('btn-logic').classList.toggle('active',  currentMode==='logic');
+  document.getElementById('btn-retype').classList.toggle('active', currentMode==='retype');
+  document.getElementById('pill-mode').textContent  = currentMode==='logic' ? 'Logic Mode' : 'Retype Mode';
+  document.getElementById('pill-level').textContent = selectedLevel;
+  document.getElementById('section-logic').classList.toggle('active',  currentMode==='logic');
+  document.getElementById('section-retype').classList.toggle('active', currentMode==='retype');
+  document.body.classList.toggle('hacker', selectedLevel==='Hacker');
+  document.getElementById('session-level-tag').textContent = selectedLevel;
+  updateTimeLimitDisplay();
+
+  if (currentMode==='logic') generateProblem();
+  else {
+    const pool = SNIPPETS.filter(s => s.level===selectedLevel);
+    loadSnippet(pool[Math.floor(Math.random()*pool.length)] || SNIPPETS[0]);
+  }
+}
+
+function goHome() {
+  resetTimer();
+  document.body.classList.remove('hacker');
+  selectedLevel = 'Beginner';
+  selectedTopic = null;
+  selectLevel('Beginner');
+  document.getElementById('screen-landing').style.display = 'flex';
+  document.getElementById('screen-app').classList.remove('visible');
+  document.getElementById('titlebar-right').style.display = 'none';
+  document.getElementById('titlebar-crumb').innerHTML = 'Select Mode';
+  document.getElementById('error-banner').style.display = 'none';
+}
+
+// ═══════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════
+let timerInterval=null, startTime=null, timerRunning=false, finalSeconds=0;
+
+function formatTime(s) {
+  return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning=true; startTime=Date.now(); setStatus('running');
+  timerInterval = setInterval(()=>{
+    const e=Math.floor((Date.now()-startTime)/1000);
+    const el=document.getElementById('timer');
+    el.textContent=formatTime(e);
+    el.classList.toggle('warn', e>=timeLimit*0.75);
+    if (currentMode==='retype') updateLiveStats();
+    if (currentMode==='logic' && e>=timeLimit && timerRunning) {
+      stopTimer(); setStatus('expired');
+      document.getElementById('submit-btn').click();
+    }
+  },500);
+}
+function stopTimer() {
+  clearInterval(timerInterval); timerRunning=false;
+  finalSeconds=Math.floor((Date.now()-startTime)/1000); return finalSeconds;
+}
+function resetTimer() {
+  clearInterval(timerInterval); timerRunning=false; finalSeconds=0;
+  const el=document.getElementById('timer');
+  if(el){el.textContent='00:00'; el.classList.remove('warn');}
+  setStatus('idle');
+}
+function setStatus(s) {
+  const dot=document.getElementById('status-dot'), txt=document.getElementById('status-text');
+  if(!dot) return;
+  dot.className='status-dot';
+  if(s==='running')  { dot.classList.add('running');  txt.textContent='Timer running'; }
+  else if(s==='done')    { dot.classList.add('done');    txt.textContent='Submitted'; }
+  else if(s==='expired') { dot.classList.add('expired'); txt.textContent="Time's up!"; }
+  else txt.textContent='Waiting for input';
+}
+function updateTimeLimitDisplay() {
+  const el=document.getElementById('time-limit-val');
+  if(el) el.textContent=formatTime(timeLimit);
+}
+
+// ═══════════════════════════════════════
+// GENERATE PROBLEM
+// ═══════════════════════════════════════
+async function generateProblem() {
+  document.getElementById('problem-spinner').style.display = 'flex';
+  document.getElementById('problem-content').style.display = 'none';
+  document.getElementById('editor-card').style.display = 'none';
+  document.getElementById('logic-result').style.display = 'none';
+  document.getElementById('error-banner').style.display = 'none';
+  resetTimer();
+  currentProblem = null;
+
+  const topic = selectedTopic || 'any standard C++ topic suitable for this exact level';
+  const levelGuide = {
+    Beginner:     'extremely simple, foundational logic. Variables, loops, simple if statements. DO NOT require complex data structures, pointers, or algorithms.',
+    Intermediate: 'moderate algorithmic complexity. Can use hash maps, sorting, standard recursion, binary search.',
+    Pro:          'advanced coding challenge. Dynamic programming, trees/graphs, greedy approaches.',
+    Hacker:       'competitive programming master level. Segment trees, advanced bit manipulation, extremely complex DP.'
+  }[selectedLevel];
+
+  const systemMsg = 'You are an expert C++ programming instructor. You strictly respond in JSON format.';
+  const prompt = `Generate a coding problem with STRICT difficulty: ${selectedLevel}. ${levelGuide}
+Topic: "${topic}".
+Return ONLY valid JSON:
+{
+  "name": "Short problem name",
+  "topic": "${selectedTopic || 'Generated Topic Name'}",
+  "description": "Clear description. Wrap inline code with backticks. Use \\n for line breaks.",
+  "examples": [{"input": "Example input", "output": "Expected output"}],
+  "eval_context": "One sentence describing exactly what the solution must do."
+}`;
+
+  try {
+    const problem = await callAI({ type:'generate', level:selectedLevel, topic, systemMsg, prompt });
+    showProblem(problem);
+  } catch(err) {
+    document.getElementById('problem-spinner').style.display = 'none';
+    const eb = document.getElementById('error-banner');
+    if(err.message.includes('429')||err.message.includes('Quota')) {
+      eb.innerHTML = '<strong>Rate Limit Exceeded</strong><br>Wait a moment and try again.';
+    } else {
+      eb.textContent = `Failed to generate problem: ${err.message}`;
+    }
+    eb.style.display = 'block';
+  }
+}
+
+function showProblem(p) {
+  currentProblem = p;
+  document.getElementById('l-prob-level').textContent = selectedLevel;
+  document.getElementById('l-prob-level').className   = 'tag ' + levelTag(selectedLevel);
+  document.getElementById('l-prob-topic').textContent = p.topic || selectedTopic || 'Mixed';
+  document.getElementById('l-prob-name').textContent  = p.name;
+  document.getElementById('l-prob-desc').innerHTML    = formatDesc(p.description);
+
+  const eg = document.getElementById('l-examples');
+  eg.innerHTML = '';
+  (p.examples||[]).forEach(ex=>{
+    eg.innerHTML += `<div class="example"><div class="example-label">Input</div><div class="example-val">${escHtml(ex.input)}</div></div><div class="example"><div class="example-label">Output</div><div class="example-val">${escHtml(ex.output)}</div></div>`;
+  });
+
+  document.getElementById('problem-spinner').style.display = 'none';
+  document.getElementById('problem-content').style.display = 'block';
+  document.getElementById('editor-card').style.display     = 'block';
+  document.getElementById('titlebar-crumb').innerHTML = `Logic Mode <span>›</span> ${selectedLevel} <span>›</span> ${p.name}`;
+
+  const ed = document.getElementById('code-editor');
+  ed.value = ''; updateLogicEditor(); ed.focus();
+}
+
+function formatDesc(text) {
+  return escHtml(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\\n/g, '<br>')
+    .replace(/\n/g, '<br>');
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function levelTag(l){ return l==='Beginner'?'tag-green':l==='Intermediate'?'tag-amber':l==='Pro'?'tag-red':'tag-accent'; }
+
+// ═══════════════════════════════════════
+// MODE SWITCH
+// ═══════════════════════════════════════
+function switchMode(mode) {
+  if(mode===currentMode) return;
+  currentMode=mode;
+  document.getElementById('section-logic').classList.toggle('active',  mode==='logic');
+  document.getElementById('section-retype').classList.toggle('active', mode==='retype');
+  document.getElementById('btn-logic').classList.toggle('active',  mode==='logic');
+  document.getElementById('btn-retype').classList.toggle('active', mode==='retype');
+  document.getElementById('pill-mode').textContent=mode==='logic'?'Logic Mode':'Retype Mode';
+  document.getElementById('app-filter-card').style.display=mode==='logic'?'flex':'none';
+  resetTimer();
+  if(mode==='logic') generateProblem();
+  else {
+    const pool=SNIPPETS.filter(s=>s.level===selectedLevel);
+    loadSnippet(pool[Math.floor(Math.random()*pool.length)]||SNIPPETS[0]);
+  }
+}
+
+document.getElementById('btn-new-problem').addEventListener('click',()=>{
+  if(currentMode==='logic') generateProblem();
+  else {
+    const pool=SNIPPETS.filter(s=>s.level===selectedLevel);
+    const next=pool.filter(s=>s!==currentSnippet);
+    loadSnippet((next.length?next:pool)[Math.floor(Math.random()*(next.length||pool.length))]);
+  }
+});
+
+// ═══════════════════════════════════════
+// EDITOR
+// ═══════════════════════════════════════
+const editor   = document.getElementById('code-editor');
+const lineNums = document.getElementById('line-nums');
+
+function updateLogicEditor(){
+  const lines=editor.value.split('\n').length;
+  lineNums.textContent=Array.from({length:lines},(_,i)=>i+1).join('\n');
+  document.getElementById('line-count').textContent=lines;
+  document.getElementById('char-count').textContent=editor.value.length;
+}
+editor.addEventListener('input',()=>{
+  if(currentMode!=='logic') return;
+  if(!timerRunning&&editor.value.length>0) startTimer();
+  updateLogicEditor();
+});
+editor.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){
+    e.preventDefault();
+    const s=editor.selectionStart,en=editor.selectionEnd;
+    editor.value=editor.value.slice(0,s)+'    '+editor.value.slice(en);
+    editor.selectionStart=editor.selectionEnd=s+4;
+    updateLogicEditor();
+  }
+});
+editor.addEventListener('scroll',()=>{ lineNums.scrollTop=editor.scrollTop; });
+
+function scoreClass(n){ return n>=70?'good':n>=40?'okay':'poor'; }
+function calcLOScore(logic,seconds){ return Math.round(logic*(0.6+0.4*Math.max(0,1-seconds/timeLimit))); }
+
+// ═══════════════════════════════════════
+// EVALUATE
+// ═══════════════════════════════════════
+async function evaluateCode(code) {
+  const systemMsg = 'You are a strict C++ code evaluator. Respond strictly in JSON format.';
+  const prompt = `Problem: ${currentProblem.eval_context}
+Difficulty: ${selectedLevel}
+Evaluate this C++ solution and return ONLY valid JSON:
+{
+  "pass": true or false,
+  "logic_score": 0-100,
+  "error_lines": [line numbers with errors or empty array],
+  "suggestions": "2-3 specific suggestions or empty string if perfect",
+  "alternative_approach": "better approach description or empty string if already optimal"
+}
+Scoring: 90-100=optimal, 70-89=correct not optimal, 40-69=partial/flawed, 0-39=incorrect.
+
+Submitted code:
+${code}`;
+
+  return await callAI({ type:'evaluate', level:selectedLevel, problem:currentProblem.eval_context, code, systemMsg, prompt });
+}
+
+const submitBtn   = document.getElementById('submit-btn');
+const loadingBar  = document.getElementById('loading-bar');
+const errorBanner = document.getElementById('error-banner');
+
+submitBtn.addEventListener('click', async()=>{
+  if(!currentProblem){ alert('Wait for the problem to load first.'); return; }
+  const code=editor.value.trim();
+  if(!code){ alert('Write some code first.'); return; }
+  const elapsed=timerRunning?stopTimer():finalSeconds||0;
+  setStatus('done');
+  submitBtn.disabled=true; submitBtn.textContent='Evaluating…';
+  loadingBar.style.display='block';
+  errorBanner.style.display='none';
+  document.getElementById('logic-result').style.display='none';
+  try {
+    const result=await evaluateCode(code);
+    showLogicResult(result, elapsed);
+  } catch(err){
+    if(err.message.includes('429')||err.message.includes('Quota')){
+      errorBanner.innerHTML='<strong>Rate Limit Exceeded</strong><br>Wait a moment and try submitting again.';
+    } else {
+      errorBanner.textContent=`Evaluation failed: ${err.message}`;
+    }
+    errorBanner.style.display='block'; setStatus('idle');
+  } finally {
+    loadingBar.style.display='none';
+    submitBtn.disabled=false; submitBtn.textContent='Submit ↗';
+  }
+});
+
+function showLogicResult(result, seconds){
+  const card=document.getElementById('logic-result');
+  const pass=result.pass, logic=result.logic_score??0, final=calcLOScore(logic,seconds);
+
+  card.className='result-card '+(pass?'pass':'fail');
+  document.getElementById('l-verdict-icon').textContent=pass?'✅':'❌';
+  document.getElementById('l-verdict-text').textContent=pass?'Accepted':'Not Accepted';
+  document.getElementById('l-verdict-sub').textContent=`Completed in ${formatTime(seconds)}`;
+
+  const rt=document.getElementById('l-res-time');  rt.textContent=formatTime(seconds); rt.className='stat-value';
+  const rl=document.getElementById('l-res-logic'); rl.textContent=logic; rl.className='stat-value '+scoreClass(logic);
+  const rf=document.getElementById('l-res-final'); rf.textContent=final; rf.className='stat-value '+scoreClass(final);
+
+  const errLines=result.error_lines||[];
+  const secErr=document.getElementById('section-errors');
+  if(errLines.length>0){
+    document.getElementById('l-error-lines').innerHTML=errLines.map(l=>`<span class="error-line-badge">Line ${l}</span>`).join('');
+    secErr.style.display='block';
+  } else secErr.style.display='none';
+
+  const secSug=document.getElementById('section-suggestions');
+  const sug=(result.suggestions||'').trim();
+  if(sug){ document.getElementById('l-suggestions').innerHTML=formatDesc(sug); secSug.style.display='block'; }
+  else secSug.style.display='none';
+
+  const secAlt=document.getElementById('section-approach');
+  const alt=(result.alternative_approach||'').trim();
+  if(alt){ document.getElementById('l-approach').innerHTML=formatDesc(alt); secAlt.style.display='block'; }
+  else secAlt.style.display='none';
+
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+document.getElementById('logic-try-again').addEventListener('click',()=>{
+  editor.value=''; updateLogicEditor();
+  document.getElementById('logic-result').style.display='none';
+  errorBanner.style.display='none';
+  resetTimer(); editor.focus();
+});
+
+// ═══════════════════════════════════════
+// RETYPE MODE
+// ═══════════════════════════════════════
+let rtErrors=0, rtTyped=0, rtComplete=false, rtPrevLen=0;
+
+function loadSnippet(s){
+  if(!s) return;
+  currentSnippet=s;
+  document.getElementById('r-snip-id').textContent=s.id;
+  document.getElementById('r-snip-level').textContent=s.level;
+  document.getElementById('r-snip-level').className='tag '+levelTag(s.level);
+  document.getElementById('r-snip-name').textContent=s.name;
+  document.getElementById('r-snip-file').textContent=s.file;
+  document.getElementById('r-snip-topics').innerHTML=s.topics.map(t=>`<span class="tag tag-accent">${t}</span>`).join('');
+  document.getElementById('titlebar-crumb').innerHTML=`Retype Mode <span>›</span> ${s.level} <span>›</span> ${s.name}`;
+  document.getElementById('pill-level').textContent=s.level;
+  timeLimit=TIME_LIMITS[s.level]; updateTimeLimitDisplay();
+  initRetype();
+}
+
+function initRetype(){
+  rtErrors=0; rtTyped=0; rtComplete=false; rtPrevLen=0;
+  const input=document.getElementById('retype-input');
+  input.value=''; input.disabled=false;
+  renderDisplay(''); syncRetypeHeight(); syncRetypeLineNumsHeight();
+  updateRetypeLineNums(1);
+  document.getElementById('live-wpm').textContent='—';
+  document.getElementById('live-acc').textContent='—';
+  document.getElementById('live-errors').textContent='0';
+  document.getElementById('retype-result').style.display='none';
+  document.getElementById('retype-progress-fill').style.width='0%';
+  resetTimer();
+  setTimeout(()=>input.focus(),50);
+}
+
+function renderDisplay(typed){
+  const snippet=currentSnippet.code;
+  let html='';
+  for(let i=0;i<snippet.length;i++){
+    const raw=snippet[i];
+    if(raw==='\n'){
+      if(i<typed.length){ html+=typed[i]==='\n'?`<span class="ch-correct">\n</span>`:`<span class="ch-error">↵</span>\n`; }
+      else if(i===typed.length){ html+=`<span class="ch-cursor ch-pending">\n</span>`; }
+      else { html+=`<span class="ch-pending">\n</span>`; }
+      continue;
+    }
+    const ch=raw===' '?'\u00a0':escHtml(raw);
+    if(i<typed.length){ html+=typed[i]===raw?`<span class="ch-correct">${ch}</span>`:`<span class="ch-error">${ch}</span>`; }
+    else if(i===typed.length){ html+=`<span class="ch-cursor ch-pending">${ch}</span>`; }
+    else { html+=`<span class="ch-pending">${ch}</span>`; }
+  }
+  document.getElementById('retype-display').innerHTML=html;
+}
+
+function syncRetypeHeight(){
+  const display=document.getElementById('retype-display');
+  const input=document.getElementById('retype-input');
+  const zone=document.getElementById('retype-scroll-zone');
+  requestAnimationFrame(()=>{
+    const h=Math.max(display.scrollHeight||display.offsetHeight,200);
+    input.style.height=h+'px';
+    zone.style.minHeight=h+'px';
+  });
+}
+function syncRetypeLineNumsHeight(){
+  const display=document.getElementById('retype-display');
+  const ln=document.getElementById('retype-line-nums');
+  requestAnimationFrame(()=>{ ln.style.minHeight=(display.scrollHeight||200)+'px'; });
+}
+function updateRetypeLineNums(lines){
+  document.getElementById('retype-line-nums').textContent=Array.from({length:lines},(_,i)=>i+1).join('\n');
+}
+document.getElementById('retype-scroll-zone').addEventListener('scroll',function(){
+  document.getElementById('retype-line-nums').scrollTop=this.scrollTop;
+});
+
+function calcWPM(sec){ if(sec<1)return 0; return Math.round((rtTyped/5)/(sec/60)); }
+function calcAcc(){ if(rtTyped===0)return 100; return Math.max(0,Math.round(((rtTyped-rtErrors)/rtTyped)*100)); }
+function updateLiveStats(){
+  if(!timerRunning) return;
+  const e=Math.floor((Date.now()-startTime)/1000);
+  document.getElementById('live-wpm').textContent=calcWPM(e);
+  document.getElementById('live-acc').textContent=calcAcc()+'%';
+  document.getElementById('live-errors').textContent=rtErrors;
+}
+
+const retypeInput=document.getElementById('retype-input');
+retypeInput.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='v'){e.preventDefault();} });
+retypeInput.addEventListener('input',()=>{
+  if(currentMode!=='retype'||rtComplete) return;
+  const typed=retypeInput.value, snippet=currentSnippet.code;
+  if(!timerRunning&&typed.length>0) startTimer();
+  if(typed.length>rtPrevLen){
+    const idx=typed.length-1;
+    if(idx<snippet.length&&typed[idx]!==snippet[idx]) rtErrors++;
+  }
+  rtPrevLen=typed.length;
+  rtTyped=Math.max(rtTyped,typed.length);
+  renderDisplay(typed); syncRetypeHeight(); syncRetypeLineNumsHeight();
+  document.getElementById('retype-progress-fill').style.width=Math.min(100,Math.round((typed.length/snippet.length)*100))+'%';
+  updateRetypeLineNums(typed.split('\n').length);
+  updateLiveStats();
+  if(typed.length>=snippet.length){ rtComplete=true; showRetypeResult(stopTimer()); }
+});
+
+function showRetypeResult(seconds){
+  document.getElementById('retype-input').disabled=true;
+  setStatus('done');
+  const wpm=calcWPM(seconds),acc=calcAcc(),errs=rtErrors,good=acc>=90;
+  const card=document.getElementById('retype-result');
+  card.className='result-card '+(good?'pass':'fail');
+  document.getElementById('r-verdict-icon').textContent=good?'✅':'⚠️';
+  document.getElementById('r-verdict-text').textContent=good?'Great Job!':'Keep Practicing';
+  document.getElementById('r-verdict-sub').textContent=`Finished in ${formatTime(seconds)}`;
+  const rw=document.getElementById('r-wpm');    rw.textContent=wpm;     rw.className='stat-value '+scoreClass(Math.min(wpm,100));
+  const ra=document.getElementById('r-acc');    ra.textContent=acc+'%'; ra.className='stat-value '+(acc>=90?'good':acc>=70?'okay':'poor');
+  const re=document.getElementById('r-errors'); re.textContent=errs;    re.className='stat-value '+(errs===0?'good':errs<=5?'okay':'poor');
+  let fb='';
+  if(errs===0)     fb='Perfect accuracy at '+wpm+' WPM — flawless.';
+  else if(acc>=90) fb=acc+'% accuracy at '+wpm+' WPM — solid. Watch those '+errs+' error'+(errs>1?'s':'')+'.';
+  else if(acc>=70) fb=acc+'% accuracy — focus on precision over speed.';
+  else             fb=acc+'% accuracy — slow down and read each character carefully.';
+  document.getElementById('r-feedback').textContent=fb;
+  card.style.display='block';
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+document.getElementById('retype-try-again').addEventListener('click',()=>{ resetTimer(); initRetype(); });
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+buildTopicDropdown();
+</script>
+</body>
+</html>
