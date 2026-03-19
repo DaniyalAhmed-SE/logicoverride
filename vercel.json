@@ -1,0 +1,33 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ]
+}
+```
+- Commit message: `"Add Vercel config"`
+
+---
+
+**Deploy on Vercel:**
+1. vercel.com → **Add New Project** → import `logicoverride`
+2. Deploy
+3. **Settings** → **Environment Variables** → add:
+   - Name: `GEMINI_API_KEY`
+   - Value: your Gemini key
+4. **Redeploy**
+
+---
+
+**Tag it as v0.2:**
+GitHub repo → **Releases** → **Create a new release** → Tag: `v0.2` → Title: `LogicOverride v0.2` → **Publish release**
+
+---
+
+That's it. Your repo structure will be:
+```
+logicoverride/
+├── api/evaluate.js
+├── public/index.html
+├── vercel.json
+└── README.md
